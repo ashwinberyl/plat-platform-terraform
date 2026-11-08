@@ -125,7 +125,7 @@ resource "aws_db_instance" "meta" {
   storage_encrypted = true
   kms_key_id        = local.kms_arn
 
-  db_name  = var.restore_snapshot_identifier == null ? "plat" : null
+  db_name  = var.restore_snapshot_identifier == null ? "platmeta" : null
   username = var.restore_snapshot_identifier == null ? "platadmin" : null
 
   manage_master_user_password   = true
@@ -170,7 +170,7 @@ resource "aws_efs_file_system" "this" {
   encrypted        = true
   kms_key_id       = local.kms_arn
   performance_mode = "generalPurpose"
-  throughput_mode  = "bursting"
+  throughput_mode  = "elastic"
 
   lifecycle_policy {
     transition_to_ia = "AFTER_30_DAYS"
@@ -191,16 +191,16 @@ resource "aws_efs_access_point" "ml" {
   file_system_id = aws_efs_file_system.this.id
 
   posix_user {
-    uid = 1001
-    gid = 1001
+    uid = 1000
+    gid = 1000
   }
 
   root_directory {
     path = "/ml"
 
     creation_info {
-      owner_uid   = 1001
-      owner_gid   = 1001
+      owner_uid   = 1000
+      owner_gid   = 1000
       permissions = "0755"
     }
   }

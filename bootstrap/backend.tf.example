@@ -1,0 +1,5 @@
+# Rename this file to backend.tf AFTER the first apply, then run:
+#   scripts/tf.sh bootstrap migrate
+terraform {
+  backend "s3" {}
+}

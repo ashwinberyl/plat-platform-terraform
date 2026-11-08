@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and use real addresses (a +jim style alias works).
+users = {
+  jim = {
+    given_name  = "Jim"
+    family_name = "Example"
+    email       = "you+jim@example.com"
+    groups      = ["platform-admins"]
+  }
+  dave = {
+    given_name  = "Dave"
+    family_name = "Example"
+    email       = "you+dave@example.com"
+    groups      = ["data-scientists"]
+  }
+}

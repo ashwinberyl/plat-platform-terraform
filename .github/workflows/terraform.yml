@@ -1,0 +1,40 @@
+name: terraform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: fmt + validate (${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - bootstrap
+          - modules/s3-bucket
+          - modules/vpc
+          - stacks/10-identity
+          - stacks/20-network
+          - stacks/30-security
+          - stacks/40-data
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: fmt
+        run: terraform fmt -check -recursive -diff ${{ matrix.dir }}
+
+      - name: init (no backend)
+        run: terraform -chdir=${{ matrix.dir }} init -backend=false -input=false
+
+      - name: validate
+        run: terraform -chdir=${{ matrix.dir }} validate

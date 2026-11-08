@@ -19,6 +19,8 @@ jobs:
           - bootstrap
           - modules/s3-bucket
           - modules/vpc
+          - labs/02-language
+          - labs/06-modules
           - stacks/10-identity
           - stacks/20-network
           - stacks/30-security

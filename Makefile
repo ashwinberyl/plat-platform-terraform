@@ -8,7 +8,7 @@ fmt:
 	terraform fmt -recursive
 
 validate:
-	@for d in bootstrap stacks/* modules/*; do \
+	@for d in bootstrap stacks/* modules/* labs/*; do \
 	  echo "== $$d"; terraform -chdir=$$d init -backend=false -input=false >/dev/null && terraform -chdir=$$d validate || exit 1; \
 	done
 

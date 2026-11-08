@@ -20,11 +20,14 @@ resource "aws_s3_bucket_ownership_controls" "this" {
   }
 }
 
+# A bucket that was never versioned has no versioning configuration at all, so no resource when off.
 resource "aws_s3_bucket_versioning" "this" {
+  count = var.versioning ? 1 : 0
+
   bucket = aws_s3_bucket.this.id
 
   versioning_configuration {
-    status = var.versioning ? "Enabled" : "Suspended"
+    status = "Enabled"
   }
 }
 

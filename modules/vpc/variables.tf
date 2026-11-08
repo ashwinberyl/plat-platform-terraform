@@ -17,11 +17,21 @@ variable "azs" {
 variable "public_subnet_cidrs" {
   description = "One CIDR per AZ, same order as azs."
   type        = list(string)
+
+  validation {
+    condition     = length(var.public_subnet_cidrs) == length(var.azs)
+    error_message = "public_subnet_cidrs needs exactly one CIDR for each entry in azs."
+  }
 }
 
 variable "private_subnet_cidrs" {
   description = "One CIDR per AZ, same order as azs."
   type        = list(string)
+
+  validation {
+    condition     = length(var.private_subnet_cidrs) == length(var.azs)
+    error_message = "private_subnet_cidrs needs exactly one CIDR for each entry in azs."
+  }
 }
 
 variable "enable_nat" {

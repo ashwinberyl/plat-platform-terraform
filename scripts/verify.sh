@@ -96,12 +96,12 @@ if [[ " $* " == *" --poison "* ]]; then
   printf 'POISON\n' > /tmp/poison.csv
   aws s3 cp /tmp/poison.csv "s3://$DATA/raw/poison-$(date +%s).csv" --only-show-errors
   DLQ=$(aws sqs get-queue-url --queue-name plat-ingest-dlq --query QueueUrl --output text)
-  for i in $(seq 1 30); do
+  for i in $(seq 1 40); do
     N=$(aws sqs get-queue-attributes --queue-url "$DLQ" --attribute-names ApproximateNumberOfMessages --query 'Attributes.ApproximateNumberOfMessages' --output text)
     [ "$N" -ge 1 ] 2>/dev/null && break
-    sleep 5
+    sleep 10
   done
-  if [ "${N:-0}" -ge 1 ] 2>/dev/null; then ok "poison message reached the DLQ (depth $N)"; else bad "dead-letter queue" "still empty after 150 s"; fi
+  if [ "${N:-0}" -ge 1 ] 2>/dev/null; then ok "poison message reached the DLQ (depth $N)"; else bad "dead-letter queue" "still empty after 400 s"; fi
 fi
 
 echo

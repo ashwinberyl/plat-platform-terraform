@@ -4,4 +4,6 @@
 crash.log
 *.tfvars
 !*.tfvars.example
+# *.auto.tfvars files are committed on purpose: the switches a stack should have (Post 18)
+!*.auto.tfvars
 .state-bucket

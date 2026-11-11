@@ -37,6 +37,7 @@ jobs:
     env:
       AWS_REGION: us-east-1
       TF_VAR_users: ${{ vars.USERS_JSON || '{}' }}
+      TF_VAR_alert_email: ${{ vars.ALERT_EMAIL || '' }}
       TF_IN_AUTOMATION: "true"
     steps:
       - uses: actions/checkout@v4

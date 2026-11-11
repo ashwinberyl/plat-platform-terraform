@@ -69,7 +69,8 @@ Costly pieces are **off by default**: `enable_nat` (20-network), `enable_secrets
 ## Tear down
 
 ```bash
-make down      # destroys stacks in reverse order; keeps bootstrap
+make down                # destroys the 12 stacks in reverse order; keeps bootstrap
+make destroy-bootstrap   # last: the state bucket and CI roles (asks for the account id)
 ```
 
 The state bucket has `prevent_destroy`. Removing it is deliberate and manual (Post 01).

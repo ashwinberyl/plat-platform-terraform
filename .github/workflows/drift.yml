@@ -45,9 +45,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue create --title "Drift in ${{ matrix.stack }}" \
-            --body "The scheduled plan found changes. Run: scripts/tf.sh ${{ matrix.stack }} plan" \
-            --label drift || true
+          gh label create drift --color D93F0B --description "Reality differs from the code" 2>/dev/null || true
+          OPEN=$(gh issue list --label drift --state open --search "Drift in ${{ matrix.stack }} in:title" --json number --jq length)
+          if [ "$OPEN" = "0" ]; then
+            gh issue create --label drift --title "Drift in ${{ matrix.stack }}" \
+              --body "The scheduled plan found changes. Run: scripts/tf.sh ${{ matrix.stack }} plan"
+          fi
       - name: fail on plan error
         if: steps.plan.outputs.code == '1'
         run: cat plan.txt && exit 1

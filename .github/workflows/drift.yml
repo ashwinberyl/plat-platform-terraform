@@ -1,0 +1,52 @@
+name: drift
+
+# Every morning: does reality still match the code? A plan with changes means someone edited AWS by hand.
+on:
+  schedule:
+    - cron: "30 1 * * *"   # 07:00 in Bengaluru
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        stack: [10-identity, 20-network, 30-security, 40-data, 50-ec2, 52-ecs, 55-eks, 60-events, 70-ml, 80-delivery, 90-observe, 95-cost]
+    env:
+      AWS_REGION: us-east-1
+      TF_VAR_users: ${{ vars.USERS_JSON || '{}' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: plan
+        id: plan
+        run: |
+          set +e
+          scripts/tf.sh ${{ matrix.stack }} plan -input=false -no-color -detailed-exitcode > plan.txt 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: open an issue when drift is found
+        if: steps.plan.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "Drift in ${{ matrix.stack }}" \
+            --body "The scheduled plan found changes. Run: scripts/tf.sh ${{ matrix.stack }} plan" \
+            --label drift || true
+      - name: fail on plan error
+        if: steps.plan.outputs.code == '1'
+        run: cat plan.txt && exit 1

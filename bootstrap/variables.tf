@@ -27,3 +27,9 @@ variable "enable_ci_roles" {
   type        = bool
   default     = true
 }
+
+variable "apply_role_scoped" {
+  description = "false: the apply role has AdministratorAccess. true: PowerUserAccess plus IAM limited to plat-* names (Post 18)."
+  type        = bool
+  default     = false
+}

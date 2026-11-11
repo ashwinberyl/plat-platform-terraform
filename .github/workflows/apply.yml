@@ -1,0 +1,51 @@
+name: apply
+
+# After merge to main: apply each changed stack, but only after a human approves the "production" environment.
+on:
+  push:
+    branches: [main]
+    paths: ["stacks/**", "modules/**", "scripts/tf.sh"]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    outputs:
+      stacks: ${{ steps.pick.outputs.stacks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        run: echo "stacks=$(scripts/changed-stacks.sh ${{ github.event.before }})" >> "$GITHUB_OUTPUT"
+
+  apply:
+    needs: find
+    if: needs.find.outputs.stacks != '[]'
+    runs-on: ubuntu-latest
+    environment: production    # configure required reviewers on this environment in the repository settings
+    strategy:
+      max-parallel: 1
+      matrix:
+        stack: ${{ fromJSON(needs.find.outputs.stacks) }}
+    concurrency:
+      group: tf-${{ matrix.stack }}
+      cancel-in-progress: false
+    env:
+      AWS_REGION: us-east-1
+      TF_VAR_users: ${{ vars.USERS_JSON || '{}' }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: scripts/tf.sh ${{ matrix.stack }} apply -input=false -auto-approve

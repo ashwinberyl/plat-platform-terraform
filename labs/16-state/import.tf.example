@@ -1,0 +1,5 @@
+# Copy to import.tf. The id of an S3 bucket is its name.
+import {
+  to = aws_s3_bucket.imported
+  id = var.bucket_name
+}

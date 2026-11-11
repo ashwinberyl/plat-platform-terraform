@@ -1,0 +1,74 @@
+name: plan
+
+# Every pull request: plan each stack the change touches, using the READ-ONLY role.
+on:
+  pull_request:
+    paths: ["stacks/**", "modules/**", "scripts/tf.sh"]
+
+permissions:
+  id-token: write       # lets the job ask GitHub for an OIDC token
+  contents: read
+  pull-requests: write  # to post the plan as a comment
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    outputs:
+      stacks: ${{ steps.pick.outputs.stacks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        run: echo "stacks=$(scripts/changed-stacks.sh origin/${{ github.base_ref }})" >> "$GITHUB_OUTPUT"
+
+  plan:
+    needs: find
+    if: needs.find.outputs.stacks != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1        # stacks read each other's state, so plan them in order, one at a time
+      matrix:
+        stack: ${{ fromJSON(needs.find.outputs.stacks) }}
+    concurrency:
+      group: tf-${{ matrix.stack }}
+      cancel-in-progress: false
+    env:
+      AWS_REGION: us-east-1
+      TF_VAR_users: ${{ vars.USERS_JSON || '{}' }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: plan
+        id: plan
+        run: |
+          set +e
+          scripts/tf.sh ${{ matrix.stack }} plan -input=false -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat plan.txt
+          exit 0
+      - name: comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const code = '${{ steps.plan.outputs.code }}';
+            const status = code === '0' ? 'No changes' : code === '2' ? 'Changes' : 'ERROR';
+            let body = fs.readFileSync('plan.txt', 'utf8');
+            if (body.length > 60000) body = '...(truncated)...\n' + body.slice(-60000);
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: context.issue.number,
+              body: `### Plan: \`${{ matrix.stack }}\` (${status})\n<details><summary>Show plan</summary>\n\n\`\`\`\n${body}\n\`\`\`\n</details>`
+            });
+      - name: fail on error
+        if: steps.plan.outputs.code == '1'
+        run: exit 1

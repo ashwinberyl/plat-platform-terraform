@@ -1,0 +1,10 @@
+# Every ignore needs a reason and an owner. Review this file when you touch the code it covers.
+
+# bootstrap: the apply role uses AdministratorAccess until the scoped policy is switched on (Post 18).
+AWS-0057
+
+# Public load balancer on purpose: plat-alb is the internet entry point of the lab API.
+AWS-0053
+
+# The lab allows all outbound traffic from application security groups.
+AWS-0104

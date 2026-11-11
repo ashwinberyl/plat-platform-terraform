@@ -2,7 +2,7 @@
 STACKS := 10-identity 20-network 30-security 40-data 50-ec2 52-ecs 55-eks 60-events 70-ml 80-delivery 90-observe 95-cost
 REVERSE := $(shell echo $(STACKS) | tr ' ' '\n' | tac | tr '\n' ' ')
 
-.PHONY: fmt validate plan up down pause
+.PHONY: fmt validate plan up down pause verify smoke test
 
 fmt:
 	terraform fmt -recursive
@@ -29,3 +29,13 @@ pause:
 	scripts/tf.sh 52-ecs apply -input=false -auto-approve -var enable_service=false
 	scripts/tf.sh 55-eks apply -input=false -auto-approve -var enable_eks=false
 	scripts/tf.sh 70-ml apply -input=false -auto-approve -var enable_endpoint=false
+
+verify:
+	scripts/verify.sh
+
+smoke:
+	scripts/verify.sh --smoke --poison
+
+test:
+	terraform -chdir=modules/s3-bucket init -backend=false -input=false >/dev/null && terraform -chdir=modules/s3-bucket test
+	terraform -chdir=modules/vpc init -backend=false -input=false >/dev/null && terraform -chdir=modules/vpc test

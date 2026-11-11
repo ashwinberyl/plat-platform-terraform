@@ -237,10 +237,60 @@ resource "aws_iam_role" "apply" {
   max_session_duration = 3600
 }
 
-# Broad on purpose for a single-account lab. Post 17 narrows it.
+# Two modes, chosen by var.apply_role_scoped (Post 18).
+#   false: AdministratorAccess. Simple, and far too broad for anything real.
+#   true : PowerUserAccess (everything except IAM and Organizations) plus IAM limited to plat-* names,
+#          and an explicit Deny so the role can never edit the CI roles themselves.
 resource "aws_iam_role_policy_attachment" "apply_admin" {
-  count = var.enable_ci_roles ? 1 : 0
+  count = var.enable_ci_roles && !var.apply_role_scoped ? 1 : 0
 
   role       = aws_iam_role.apply[0].name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "apply_power_user" {
+  count = var.enable_ci_roles && var.apply_role_scoped ? 1 : 0
+
+  role       = aws_iam_role.apply[0].name
+  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+}
+
+data "aws_iam_policy_document" "apply_scoped_iam" {
+  statement {
+    sid     = "ManagePlatIam"
+    actions = ["iam:*"]
+
+    resources = [
+      "arn:aws:iam::${local.account_id}:role/plat-*",
+      "arn:aws:iam::${local.account_id}:policy/plat-*",
+      "arn:aws:iam::${local.account_id}:instance-profile/plat-*",
+    ]
+  }
+
+  statement {
+    sid       = "ReadIamAndCreateServiceLinkedRoles"
+    actions   = ["iam:Get*", "iam:List*", "iam:CreateServiceLinkedRole", "iam:SimulatePrincipalPolicy"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "OrganizationsReadForIdentityCenter"
+    actions   = ["organizations:Describe*", "organizations:List*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "NeverTouchTheCiRoles"
+    effect    = "Deny"
+    actions   = ["iam:*"]
+    resources = ["arn:aws:iam::${local.account_id}:role/plat-tf-*"]
+  }
+}
+
+resource "aws_iam_role_policy" "apply_scoped_iam" {
+  count = var.enable_ci_roles && var.apply_role_scoped ? 1 : 0
+
+  name   = "plat-scoped-iam"
+  role   = aws_iam_role.apply[0].id
+  policy = data.aws_iam_policy_document.apply_scoped_iam.json
 }

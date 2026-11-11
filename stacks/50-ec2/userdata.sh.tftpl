@@ -1,0 +1,15 @@
+#!/bin/bash
+# Runs once as root at first boot (cloud-init). Output goes to /var/log/cloud-init-output.log.
+set -euxo pipefail
+
+# AL2023 package repositories are served from S3, so the S3 gateway endpoint is enough to install.
+dnf install -y amazon-efs-utils amazon-cloudwatch-agent postgresql16 nmap-ncat
+
+%{ if mount_efs ~}
+mkdir -p /mnt/ml
+echo "${efs_id}:/ /mnt/ml efs _netdev,tls,accesspoint=${access_point_id} 0 0" >> /etc/fstab
+mount -a -t efs
+%{ endif ~}
+
+# Config lives in SSM Parameter Store (see main.tf); this needs SSM reachability (NAT or endpoints).
+amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c ssm:${cwagent_param} || echo "cwagent config not fetched yet"

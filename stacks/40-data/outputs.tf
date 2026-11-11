@@ -37,3 +37,7 @@ output "efs_access_point_arn" {
 output "efs_sg_id" {
   value = aws_security_group.efs.id
 }
+
+output "efs_access_point_id" {
+  value = aws_efs_access_point.ml.id
+}

@@ -1,5 +1,5 @@
 # Stacks apply in this order and destroy in the reverse order.
-STACKS := 10-identity 20-network 30-security 40-data
+STACKS := 10-identity 20-network 30-security 40-data 50-ec2 52-ecs 55-eks 60-events 70-ml 80-delivery 90-observe 95-cost
 REVERSE := $(shell echo $(STACKS) | tr ' ' '\n' | tac | tr '\n' ' ')
 
 .PHONY: fmt validate plan up down pause
@@ -26,3 +26,6 @@ pause:
 	scripts/tf.sh 20-network apply -input=false -auto-approve -var enable_nat=false
 	scripts/tf.sh 30-security apply -input=false -auto-approve -var enable_secretsmanager_endpoint=false
 	scripts/tf.sh 40-data apply -input=false -auto-approve -var enable_rds=false
+	scripts/tf.sh 52-ecs apply -input=false -auto-approve -var enable_service=false
+	scripts/tf.sh 55-eks apply -input=false -auto-approve -var enable_eks=false
+	scripts/tf.sh 70-ml apply -input=false -auto-approve -var enable_endpoint=false

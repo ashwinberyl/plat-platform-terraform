@@ -54,7 +54,11 @@ resource "aws_subnet" "public" {
   cidr_block              = each.value.cidr
   map_public_ip_on_launch = false
 
-  tags = merge(var.tags, { Name = "${var.name}-public-${each.key}", tier = "public" })
+  tags = merge(var.tags, {
+    Name = "${var.name}-public-${each.key}"
+    tier = "public"
+    "kubernetes.io/role/elb" = "1"
+  })
 }
 
 resource "aws_subnet" "private" {
@@ -64,7 +68,11 @@ resource "aws_subnet" "private" {
   availability_zone = each.value.az
   cidr_block        = each.value.cidr
 
-  tags = merge(var.tags, { Name = "${var.name}-private-${each.key}", tier = "private" })
+  tags = merge(var.tags, {
+    Name = "${var.name}-private-${each.key}"
+    tier = "private"
+    "kubernetes.io/role/internal-elb" = "1"
+  })
 }
 
 # ------------------------------------------------------------ route tables

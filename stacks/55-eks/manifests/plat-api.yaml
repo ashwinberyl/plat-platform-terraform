@@ -1,0 +1,49 @@
+# Applied by hand in Post 10 with: kubectl apply -f manifests/plat-api.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: plat-api            # must match var.service_account: the pod role is bound to it
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plat-api
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: plat-api
+  template:
+    metadata:
+      labels:
+        app: plat-api
+    spec:
+      serviceAccountName: plat-api
+      containers:
+        - name: api
+          image: public.ecr.aws/docker/library/nginx:stable
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plat-api-lb
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: plat-api
+  ports:
+    - port: 80
+      targetPort: 80

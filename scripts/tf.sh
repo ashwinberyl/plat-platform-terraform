@@ -3,7 +3,7 @@
 #   scripts/tf.sh 20-network plan
 #   scripts/tf.sh 20-network apply -var enable_nat=true
 #   scripts/tf.sh bootstrap migrate        # one-time: move local state into S3
-# <stack> is "bootstrap" or a directory name under stacks/.
+# <stack> is "bootstrap", a directory name under stacks/, or labs/<name> for a lab that uses remote state.
 set -euo pipefail
 
 STACK="${1:?usage: tf.sh <stack> <command> [args...]}"
@@ -17,6 +17,8 @@ BUCKET="${TF_STATE_BUCKET:-plat-tfstate-${ACCOUNT}-${REGION}}"
 
 if [ "$STACK" = "bootstrap" ]; then
   DIR="$ROOT/bootstrap"
+elif [[ "$STACK" == labs/* ]]; then
+  DIR="$ROOT/$STACK"
 else
   DIR="$ROOT/stacks/$STACK"
 fi

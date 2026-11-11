@@ -25,6 +25,14 @@ jobs:
           - stacks/20-network
           - stacks/30-security
           - stacks/40-data
+          - stacks/50-ec2
+          - stacks/52-ecs
+          - stacks/55-eks
+          - stacks/60-events
+          - stacks/70-ml
+          - stacks/80-delivery
+          - stacks/90-observe
+          - stacks/95-cost
     steps:
       - uses: actions/checkout@v4
 

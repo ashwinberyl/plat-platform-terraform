@@ -55,8 +55,8 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = false
 
   tags = merge(var.tags, {
-    Name = "${var.name}-public-${each.key}"
-    tier = "public"
+    Name                     = "${var.name}-public-${each.key}"
+    tier                     = "public"
     "kubernetes.io/role/elb" = "1"
   })
 }
@@ -69,8 +69,8 @@ resource "aws_subnet" "private" {
   cidr_block        = each.value.cidr
 
   tags = merge(var.tags, {
-    Name = "${var.name}-private-${each.key}"
-    tier = "private"
+    Name                              = "${var.name}-private-${each.key}"
+    tier                              = "private"
     "kubernetes.io/role/internal-elb" = "1"
   })
 }

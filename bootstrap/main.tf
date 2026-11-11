@@ -139,7 +139,7 @@ locals {
   github_sub_prefix = "repo:${var.github_owner}/${var.github_repo}"
 }
 
-# Plan role: any pull request in this repository may assume it. Read-only.
+# Plan role: pull requests, and jobs on main (the nightly drift check). Read-only, so both are safe.
 data "aws_iam_policy_document" "plan_trust" {
   count = var.enable_ci_roles ? 1 : 0
 
@@ -160,12 +160,14 @@ data "aws_iam_policy_document" "plan_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${local.github_sub_prefix}:pull_request"]
+      values   = ["${local.github_sub_prefix}:pull_request", "${local.github_sub_prefix}:ref:refs/heads/main"]
     }
   }
 }
 
-# Apply role: only the main branch may assume it.
+# Apply role: only a job that runs in the "production" environment may assume it. A job that declares an
+# environment gets a token whose sub is ...:environment:production (the branch is no longer in it), so
+# restrict that environment to the main branch and add required reviewers in the repository settings.
 data "aws_iam_policy_document" "apply_trust" {
   count = var.enable_ci_roles ? 1 : 0
 
@@ -186,7 +188,7 @@ data "aws_iam_policy_document" "apply_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${local.github_sub_prefix}:ref:refs/heads/main"]
+      values   = ["${local.github_sub_prefix}:environment:production"]
     }
   }
 }

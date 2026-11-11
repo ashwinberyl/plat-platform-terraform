@@ -8,6 +8,8 @@ locals {
   alb_suffix  = data.terraform_remote_state.ecs.outputs.alb_arn_suffix
   tg_suffix   = data.terraform_remote_state.ecs.outputs.target_group_arn_suffix
 
+  ingest_log_group = "/aws/lambda/${local.ingest_fn}"
+
   # Alarms on things that are switched off would sit in ALARM or INSUFFICIENT_DATA forever.
   has_service  = local.service != null
   has_instance = local.instance_id != null
@@ -96,6 +98,22 @@ resource "aws_cloudwatch_metric_alarm" "ec2_disk_high" {
   alarm_actions       = [local.topic_arn]
 }
 
+# ------------------------------------------------------------ turn log lines into a metric
+# plat-ingest prints "failed <message id>: <reason>" for every record it cannot process.
+resource "aws_cloudwatch_log_metric_filter" "ingest_failures" {
+  name           = "plat-ingest-failures"
+  log_group_name = local.ingest_log_group
+  pattern        = "\"failed\""
+
+  metric_transformation {
+    name          = "IngestFailures"
+    namespace     = "Plat"
+    value         = "1"
+    default_value = "0"
+    unit          = "Count"
+  }
+}
+
 # ------------------------------------------------------------ dashboard
 locals {
   widgets = concat(
@@ -114,6 +132,7 @@ locals {
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", local.ingest_fn],
             ["AWS/Lambda", "Errors", "FunctionName", local.ingest_fn],
+            ["Plat", "IngestFailures"],
           ]
         }
       },
@@ -165,6 +184,22 @@ locals {
           period = 60
           metrics = [
             ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", local.cluster, "ServiceName", coalesce(local.service, "none")],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 12
+        width  = 12
+        height = 6
+        properties = {
+          title  = "API: healthy targets behind the load balancer"
+          region = var.region
+          stat   = "Minimum"
+          period = 60
+          metrics = [
+            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", local.tg_suffix, "LoadBalancer", local.alb_suffix],
           ]
         }
       },

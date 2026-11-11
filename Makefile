@@ -2,7 +2,7 @@
 STACKS := 10-identity 20-network 30-security 40-data 50-ec2 52-ecs 55-eks 60-events 70-ml 80-delivery 90-observe 95-cost
 REVERSE := $(shell echo $(STACKS) | tr ' ' '\n' | tac | tr '\n' ' ')
 
-.PHONY: fmt validate plan up full down pause verify smoke test
+.PHONY: fmt validate plan up full down pause verify smoke test destroy-bootstrap
 
 fmt:
 	terraform fmt -recursive
@@ -59,3 +59,7 @@ smoke:
 test:
 	terraform -chdir=modules/s3-bucket init -backend=false -input=false >/dev/null && terraform -chdir=modules/s3-bucket test
 	terraform -chdir=modules/vpc init -backend=false -input=false >/dev/null && terraform -chdir=modules/vpc test
+
+# The very last step, after `make down`. Asks you to type the account id.
+destroy-bootstrap:
+	scripts/destroy-bootstrap.sh

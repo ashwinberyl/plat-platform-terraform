@@ -1,7 +1,6 @@
 locals {
   account_id = data.aws_caller_identity.current.account_id
   vpc_id     = data.terraform_remote_state.network.outputs.vpc_id
-  vpc_cidr   = data.terraform_remote_state.network.outputs.vpc_cidr
   private    = data.terraform_remote_state.network.outputs.private_subnet_ids
   kms_arn    = data.terraform_remote_state.security.outputs.kms_key_arn
   app_sg_id  = data.terraform_remote_state.security.outputs.app_sg_id

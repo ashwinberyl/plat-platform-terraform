@@ -17,3 +17,8 @@ rule "terraform_required_version" {
 rule "terraform_required_providers" {
   enabled = true
 }
+
+# Lab scaffolds hold deliberately unused locals/variables that the post asks you to use.
+rule "terraform_unused_declarations" {
+  enabled = false
+}

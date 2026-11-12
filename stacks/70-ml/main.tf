@@ -125,7 +125,8 @@ resource "aws_sagemaker_user_profile" "this" {
 resource "aws_sagemaker_model" "churn" {
   count = local.endpoint
 
-  name_prefix        = "plat-churn-"
+  # aws_sagemaker_model has no name_prefix; a hash of the inputs gives a new name per version.
+  name               = "plat-churn-${substr(md5("${var.inference_image}${var.model_data_url}"), 0, 8)}"
   execution_role_arn = aws_iam_role.sagemaker.arn
 
   primary_container {

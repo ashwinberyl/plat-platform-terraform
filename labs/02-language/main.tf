@@ -51,7 +51,7 @@ output "by_key_addresses" {
 
 output "locals_preview" {
   description = "Everything the locals compute, so `terraform plan` shows it and tflint sees them used."
-  value = {
+  value       = {
     public_cidrs  = local.public_cidrs
     by_cidr       = local.by_cidr
     subnet_names  = local.subnet_names

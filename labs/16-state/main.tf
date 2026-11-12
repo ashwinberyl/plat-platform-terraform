@@ -20,3 +20,8 @@ provider "aws" {
     }
   }
 }
+
+output "bucket_name" {
+  description = "Echoes the hand-made bucket name that import.tf.example adopts."
+  value       = var.bucket_name
+}

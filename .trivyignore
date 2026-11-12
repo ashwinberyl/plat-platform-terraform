@@ -8,3 +8,16 @@ AWS-0053
 
 # The lab allows all outbound traffic from application security groups.
 AWS-0104
+
+# bootstrap: the state bucket uses SSE-S3 (AES256). A customer-managed key would add a key to bootstrap before anything else exists, and every reader of state would need kms:Decrypt.
+AWS-0132
+
+# ECR repository allows mutable tags because the lab re-pushes :latest (Post 10). Production would set IMMUTABLE and push unique tags.
+AWS-0031
+
+# plat-alerts topic is unencrypted: CloudWatch alarms, EventBridge and Budgets cannot publish to a topic encrypted with the AWS-managed key. A customer-managed key plus policy grants would be needed (Post 14 explains the pitfall).
+AWS-0095
+
+# The lab Deployment runs stock nginx, which needs root and a writable filesystem. A real workload would set a non-root user and readOnlyRootFilesystem.
+KSV-0014
+KSV-0118
